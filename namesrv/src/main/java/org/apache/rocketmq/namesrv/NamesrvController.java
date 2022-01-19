@@ -78,7 +78,7 @@ public class NamesrvController {
     public boolean initialize() {
         //加载KV配置
         this.kvConfigManager.load();
-        //创建NettyServer网络处理对象
+        //创建NettyServer网络处理对象（用于提供响应broker注册服务，提供获取broker列表的服务等）
         this.remotingServer = new NettyRemotingServer(this.nettyServerConfig, this.brokerHousekeepingService);
         //Netty服务器的工作线程池
         this.remotingExecutor =
@@ -91,6 +91,7 @@ public class NamesrvController {
 
             @Override
             public void run() {
+                // routeInfoManager：路由管理器
                 NamesrvController.this.routeInfoManager.scanNotActiveBroker();
             }
         }, 5, 10, TimeUnit.SECONDS);

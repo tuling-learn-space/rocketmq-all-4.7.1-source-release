@@ -184,7 +184,7 @@ public class BrokerOuterAPI {
         final byte[] body
     ) throws RemotingCommandException, MQBrokerException, RemotingConnectException, RemotingSendRequestException, RemotingTimeoutException,
         InterruptedException {
-        //封装一个网络请求
+        //封装一个网络请求,broker中对netty的应用，最核心的点是这个RequestCode，可以看做了哪些处理：org.apache.rocketmq.namesrv.processor.DefaultRequestProcessor.processRequest
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.REGISTER_BROKER, requestHeader);
         request.setBody(body);
         //特殊请求 sendOneWay

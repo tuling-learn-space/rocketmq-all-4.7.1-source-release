@@ -271,7 +271,7 @@ public class BrokerController {
                 log.error("Failed to initialize", e);
             }
         }
-
+        //加载磁盘文件（读取consumeQUeue文件，indexFile文件。如果索引没对齐，还会恢复索引？）
         result = result && this.messageStore.load();
         //K2 Broker的Netty组件。注意，Broker需要既是服务端(接收Producer和Consumer的请求)，又是客户端(要往NameServer和Producer发送请求)。
         if (result) {
@@ -880,7 +880,7 @@ public class BrokerController {
         if (this.fastRemotingServer != null) {
             this.fastRemotingServer.start();
         }
-        //跟文件相关的一个服务组件，暂不关注
+        //跟文件相关的一个服务组件，比如acl配置文件的热加载，暂不关注
         if (this.fileWatchService != null) {
             this.fileWatchService.start();
         }
@@ -1013,6 +1013,7 @@ public class BrokerController {
         final int timeoutMills) {
 
         TopicConfigSerializeWrapper topicConfigWrapper = this.getTopicConfigManager().buildTopicConfigSerializeWrapper();
+        //brokerOuterAPI是对外通信组件，负责与nameServer进行交互
         List<Boolean> changeList = brokerOuterAPI.needRegister(clusterName, brokerAddr, brokerName, brokerId, topicConfigWrapper, timeoutMills);
         boolean needRegister = false;
         for (Boolean changed : changeList) {
