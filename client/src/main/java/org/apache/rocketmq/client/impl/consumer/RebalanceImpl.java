@@ -258,9 +258,9 @@ public abstract class RebalanceImpl {
             }
             //K2 客户端负载：集群模式负载方法
             case CLUSTERING: {
-                //订阅的主题
+                //订阅的主题中的所有队列
                 Set<MessageQueue> mqSet = this.topicSubscribeInfoTable.get(topic);
-                //客户端ID
+                //获取订阅对应主题的指定消费组中的所有客户端ID
                 List<String> cidAll = this.mQClientFactory.findConsumerIdList(topic, consumerGroup);
                 if (null == mqSet) {
                     if (!topic.startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
@@ -294,12 +294,12 @@ public abstract class RebalanceImpl {
                             e);
                         return;
                     }
-
+                    //消费者实际分配的MessageQueue集合
                     Set<MessageQueue> allocateResultSet = new HashSet<MessageQueue>();
                     if (allocateResult != null) {
                         allocateResultSet.addAll(allocateResult);
                     }
-
+                    //?
                     boolean changed = this.updateProcessQueueTableInRebalance(topic, allocateResultSet, isOrder);
                     if (changed) {
                         log.info(

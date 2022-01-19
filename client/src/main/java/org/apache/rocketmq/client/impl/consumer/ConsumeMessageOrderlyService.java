@@ -418,9 +418,9 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
                 log.warn("run, the message queue not be able to consume, because it's dropped. {}", this.messageQueue);
                 return;
             }
-
+            //通过加锁，将并发的消息顺序进行消费。消息处理的方式没什么特别。保证从一个队列里按顺序进行挨个消费
             final Object objLock = messageQueueLock.fetchLockObject(this.messageQueue);
-            synchronized (objLock) {//通过加锁，将并发的消息顺序进行消费。消息处理的方式没什么特别。
+            synchronized (objLock) {
                 if (MessageModel.BROADCASTING.equals(ConsumeMessageOrderlyService.this.defaultMQPushConsumerImpl.messageModel())
                     || (this.processQueue.isLocked() && !this.processQueue.isLockExpired())) {
                     final long beginTime = System.currentTimeMillis();

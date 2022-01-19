@@ -212,14 +212,14 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
     }
     //K2 拉取消息的核心流程
     public void pullMessage(final PullRequest pullRequest) {
-        //获取要处理的消息：ProcessQueue
+        //获取要处理的消息：ProcessQueue用于接收拉取到的消息进行后续处理
         final ProcessQueue processQueue = pullRequest.getProcessQueue();
         //如果队列被抛弃，直接返回
         if (processQueue.isDropped()) {
             log.info("the pull request[{}] is dropped.", pullRequest.toString());
             return;
         }
-        //先更新时间戳
+        //先更新最近一次拉取的时间戳
         pullRequest.getProcessQueue().setLastPullTimestamp(System.currentTimeMillis());
 
         try {
@@ -239,7 +239,8 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
         long cachedMessageCount = processQueue.getMsgCount().get();
         //获得最大待处理消息大小
         long cachedMessageSizeInMiB = processQueue.getMsgSize().get() / (1024 * 1024);
-        //从数量进行流控
+        // 流控处理
+        // 从数量进行流控
         if (cachedMessageCount > this.defaultMQPushConsumer.getPullThresholdForQueue()) {
             this.executePullRequestLater(pullRequest, PULL_TIME_DELAY_MILLS_WHEN_FLOW_CONTROL);
             if ((queueFlowControlTimes++ % 1000) == 0) {
@@ -259,8 +260,9 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
             }
             return;
         }
-
+        //是否顺序消费
         if (!this.consumeOrderly) {
+            //不是顺序消费，即并发消费，先进行下判断，也可以当做是流控
             if (processQueue.getMaxSpan() > this.defaultMQPushConsumer.getConsumeConcurrentlyMaxSpan()) {
                 this.executePullRequestLater(pullRequest, PULL_TIME_DELAY_MILLS_WHEN_FLOW_CONTROL);
                 if ((queueMaxSpanFlowControlTimes++ % 1000) == 0) {
@@ -272,6 +274,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
                 return;
             }
         } else {
+            //如果是顺序消费，锁住队列
             if (processQueue.isLocked()) {
                 if (!pullRequest.isLockedFirst()) {
                     final long offset = this.rebalanceImpl.computePullFromWhere(pullRequest.getMessageQueue());
@@ -301,7 +304,8 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
         }
 
         final long beginTimestamp = System.currentTimeMillis();
-        //K2 客户端 默认的拉取的回调函数，在拉取到消息后会进入这个方法处理。
+        //定义回调方法，是消费过程的真正入口
+        //K2 客户端 默认拉取的回调函数，在拉取到消息后会进入这个方法处理。
         PullCallback pullCallback = new PullCallback() {
             @Override
             public void onSuccess(PullResult pullResult) {
@@ -325,9 +329,9 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
 
                                 DefaultMQPushConsumerImpl.this.getConsumerStatsManager().incPullTPS(pullRequest.getConsumerGroup(),
                                     pullRequest.getMessageQueue().getTopic(), pullResult.getMsgFoundList().size());
-
+                                //将消息保存到ProcessQueue
                                 boolean dispatchToConsume = processQueue.putMessage(pullResult.getMsgFoundList());
-                                //K2 消费者消息服务处理消费到的消息
+                                //K2 消费者消息服务处理拉到的消息，即进行消费
                                 DefaultMQPushConsumerImpl.this.consumeMessageService.submitConsumeRequest(
                                     pullResult.getMsgFoundList(),
                                     processQueue,
@@ -434,7 +438,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
             classFilter // class filter
         );
         try {
-            //K2 客户端实际与服务器交互，拉取消息的地方
+            //K2 客户端实际与服务器交互，拉取消息的地方，调用回调方法，进行回调消费
             this.pullAPIWrapper.pullKernelImpl(
                 pullRequest.getMessageQueue(),
                 subExpression,

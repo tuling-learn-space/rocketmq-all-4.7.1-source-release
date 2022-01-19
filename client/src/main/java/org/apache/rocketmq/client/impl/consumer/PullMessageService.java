@@ -77,8 +77,10 @@ public class PullMessageService extends ServiceThread {
     }
 
     private void pullMessage(final PullRequest pullRequest) {
+        //获取属于当前消费组的消费者客户端
         final MQConsumerInner consumer = this.mQClientFactory.selectConsumer(pullRequest.getConsumerGroup());
         if (consumer != null) {
+            //强转
             DefaultMQPushConsumerImpl impl = (DefaultMQPushConsumerImpl) consumer;
             //K2 推模式的消费者最终还是会使用拉消息的方式
             impl.pullMessage(pullRequest);
@@ -90,10 +92,10 @@ public class PullMessageService extends ServiceThread {
     @Override
     public void run() {
         log.info(this.getServiceName() + " service started");
-
+        //轮询操作
         while (!this.isStopped()) {
             try {
-                //拉取消息的请求队列
+                //所有拉取消息的请求放到队列中，挨个进行处理
                 PullRequest pullRequest = this.pullRequestQueue.take();
                 //处理请求
                 this.pullMessage(pullRequest);

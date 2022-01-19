@@ -237,10 +237,10 @@ public class MQClientInstance {
                     this.mQClientAPIImpl.start();
                     // Start various schedule tasks
                     this.startScheduledTask();
-                    // Start pull service
+                    // K2 Start pull service 拉取消息
                     this.pullMessageService.start();
                     // Start rebalance service
-                    //K2 客户端负载均衡
+                    //K2 客户端负载均衡(其实就是给客户端分配topic中要消费的队列)
                     this.rebalanceService.start();
                     // Start push service
                     this.defaultMQProducer.getDefaultMQProducerImpl().start(false);
