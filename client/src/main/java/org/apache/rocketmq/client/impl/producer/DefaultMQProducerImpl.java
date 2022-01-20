@@ -1214,6 +1214,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
         }
 
         // ignore DelayTimeLevel parameter
+        //事务消息不支持延迟消息，这里直接清除延迟属性
         if (msg.getDelayTimeLevel() != 0) {
             MessageAccessor.clearProperty(msg, MessageConst.PROPERTY_DELAY_TIME_LEVEL);
         }
